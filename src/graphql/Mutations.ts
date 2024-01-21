@@ -1,34 +1,13 @@
 import {
   GraphQLObjectType,
-  GraphQLString,
   GraphQLNonNull,
+  GraphQLString,
   GraphQLID,
-  GraphQLList,
   GraphQLBoolean,
-  GraphQLSchema,
+  GraphQLList,
 } from "graphql";
-import ProductType from "../types/productTypes";
 import Product from "../models/Product";
-
-const RootQuery = new GraphQLObjectType({
-  name: "RootQueryType",
-  fields: {
-    product: {
-      type: ProductType,
-      args: { _id: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve(_, args) {
-        return Product.findById(args._id);
-      },
-    },
-    productsByProducer: {
-      type: new GraphQLList(ProductType),
-      args: { producerId: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve(_, args) {
-        return Product.find({ producerId: args.producerId });
-      },
-    },
-  },
-});
+import ProductType from "../types/productTypes";
 
 const Mutation = new GraphQLObjectType({
   name: "Mutation",
@@ -41,12 +20,12 @@ const Mutation = new GraphQLObjectType({
         producerId: { type: new GraphQLNonNull(GraphQLID) },
       },
       resolve(_, args) {
-        const product1 = new Product({
+        const product = new Product({
           vintage: args.vintage,
           name: args.name,
           producerId: args.producerId,
         });
-        return product1.save();
+        return product.save();
       },
     },
     updateProduct: {
@@ -80,7 +59,4 @@ const Mutation = new GraphQLObjectType({
   },
 });
 
-export default new GraphQLSchema({
-  query: RootQuery,
-  mutation: Mutation,
-});
+export default Mutation;

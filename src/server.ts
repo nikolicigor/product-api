@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import { graphqlHTTP } from "express-graphql";
-import schema from "./graphql/schema";
+import schema from "./graphql";
 import Database from "./data/mongoose";
 
 class Server {
