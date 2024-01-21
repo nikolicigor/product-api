@@ -1,12 +1,13 @@
-// src/types/producerTypes.ts
-import { GraphQLObjectType, GraphQLString, GraphQLID } from "graphql";
+import { GraphQLObjectType, GraphQLID, GraphQLString } from "graphql";
 
-export const ProducerType = new GraphQLObjectType({
+const ProducerType = new GraphQLObjectType({
   name: "Producer",
-  fields: {
+  fields: () => ({
     _id: { type: GraphQLID },
     name: { type: GraphQLString },
     country: { type: GraphQLString },
     region: { type: GraphQLString },
-  },
+  }),
 });
+
+export default ProducerType;
