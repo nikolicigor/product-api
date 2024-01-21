@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node --inspect=0.0.0.0:9999 dist/server.js",
     "build": "tsc -p ./",
     "start:dev": "npx nodemon -L -e ts --exec 'npm run build:dev'",
     "build:dev": "tsc -p ./ && node --inspect=0.0.0.0:9999 --nolazy --max-old-space-size=2048 ./dist/server.js"

@@ -6,8 +6,8 @@ import {
   GraphQLBoolean,
   GraphQLList,
 } from "graphql";
-import Product from "../models/Product";
 import ProductType from "../types/productTypes";
+import ProductResolvers from "../resolvers/productResolvers";
 
 const Mutation = new GraphQLObjectType({
   name: "Mutation",
@@ -19,14 +19,7 @@ const Mutation = new GraphQLObjectType({
         name: { type: new GraphQLNonNull(GraphQLString) },
         producerId: { type: new GraphQLNonNull(GraphQLID) },
       },
-      resolve(_, args) {
-        const product = new Product({
-          vintage: args.vintage,
-          name: args.name,
-          producerId: args.producerId,
-        });
-        return product.save();
-      },
+      resolve: ProductResolvers.createProduct,
     },
     updateProduct: {
       type: ProductType,
@@ -36,25 +29,18 @@ const Mutation = new GraphQLObjectType({
         name: { type: GraphQLString },
         producerId: { type: GraphQLID },
       },
-      resolve(_, args) {
-        return Product.findByIdAndUpdate(args._id, args, { new: true });
-      },
+      resolve: ProductResolvers.updateProduct,
     },
     deleteProducts: {
       type: GraphQLBoolean,
       args: {
         ids: { type: new GraphQLList(GraphQLID) },
       },
-      resolve(_, args) {
-        return Product.deleteMany({ _id: { $in: args.ids } }).then(() => true);
-      },
+      resolve: ProductResolvers.deleteProducts,
     },
     syncProducts: {
       type: GraphQLBoolean,
-      resolve() {
-        // TODO
-        return true;
-      },
+      resolve: ProductResolvers.syncProducts,
     },
   },
 });

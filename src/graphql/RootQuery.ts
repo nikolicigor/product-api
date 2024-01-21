@@ -4,8 +4,8 @@ import {
   GraphQLID,
   GraphQLList,
 } from "graphql";
-import Product from "../models/Product";
 import ProductType from "../types/productTypes";
+import ProductResolvers from "../resolvers/productResolvers";
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
@@ -13,16 +13,12 @@ const RootQuery = new GraphQLObjectType({
     product: {
       type: ProductType,
       args: { _id: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve(_, args) {
-        return Product.findById(args._id);
-      },
+      resolve: ProductResolvers.product,
     },
     productsByProducer: {
       type: new GraphQLList(ProductType),
       args: { producerId: { type: new GraphQLNonNull(GraphQLID) } },
-      resolve(_, args) {
-        return Product.find({ producerId: args.producerId });
-      },
+      resolve: ProductResolvers.productsByProducer,
     },
   },
 });
