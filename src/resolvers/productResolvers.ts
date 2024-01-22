@@ -1,6 +1,6 @@
 import { GraphQLResolveInfo } from "graphql";
 import Product from "../models/Product";
-import * as fs from "fs";
+import Producer from "../models/Producer";
 import { parse } from "csv-parse";
 import { Transform } from "stream";
 import axios from "axios";
@@ -54,39 +54,57 @@ class ProductResolvers {
       console.log("Mutation: synchronizeProducts");
       process.nextTick(() => true);
 
-      // Make an HTTP request to get the CSV data
-      const response = await axios.get(
-        "https://api.frw.co.uk/feeds/all_listings.csv",
-        { responseType: "stream" }
-      );
-
-      const stream = response.data
-        .pipe(parse({ columns: true }))
-        .on("error", (error: any) => {
-          console.error("Stream error:", error);
+      const stream = await axios
+        .get("https://api.frw.co.uk/feeds/all_listings.csv", {
+          responseType: "stream",
+        })
+        .then((response) => response.data)
+        .catch((error) => {
+          console.error("HTTP request error:", error);
+          throw error;
         });
 
+      const parseStream = stream.pipe(parse({ columns: true }));
+
       let batch: any = [];
+      let tmp = new Map<string, any>();
 
       const transformStream = new Transform({
         objectMode: true,
-        transform: async (product, encoding, callback) => {
+        async transform(product, encoding, callback) {
           const filter = {
             vintage: product.Vintage,
             name: product["Product Name"],
-            producerId: product.Producer,
           };
 
-          batch.push({
-            updateOne: {
-              filter: filter,
-              update: { $set: filter },
-              upsert: true,
-            },
-          });
+          const key = `${product.Vintage}-${product["Product Name"]}-${product["Producer"]}`;
 
-          if (batch.length >= 100) {
-            await Product.bulkWrite(batch);
+          if (!tmp.has(key)) {
+            tmp.set(key, product);
+          }
+
+          if (tmp.size >= 100) {
+            for (const [key, value] of tmp) {
+              const producer = await ProductResolvers.findOrCreateProducer(
+                value
+              );
+
+              const product = {
+                vintage: value.Vintage,
+                name: value["Product Name"],
+                producerId: producer.id,
+              };
+
+              batch.push({
+                updateOne: {
+                  filter: filter,
+                  update: product,
+                  upsert: true,
+                },
+              });
+            }
+
+            await ProductResolvers.bulkWriteProducts(batch);
             batch = [];
           }
 
@@ -94,11 +112,11 @@ class ProductResolvers {
         },
       });
 
-      stream.pipe(transformStream);
+      parseStream.pipe(transformStream);
 
       transformStream.on("end", async () => {
         if (batch.length > 0) {
-          await Product.bulkWrite(batch);
+          await this.bulkWriteProducts(batch);
         }
 
         console.log("Product synchronization completed.");
@@ -107,10 +125,36 @@ class ProductResolvers {
       transformStream.on("error", (error) => {
         console.error("Stream error:", error);
       });
+
       return true;
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return false;
+    }
+  }
+  static async bulkWriteProducts(batch: any) {
+    if (batch.length > 0) {
+      await Product.bulkWrite(batch);
+    }
+  }
+
+  static async findOrCreateProducer(value: any): Promise<any> {
+    const producer = await Producer.findOne({
+      name: value["Producer"],
+      country: value["Country"],
+      region: value["Region"],
+    });
+
+    if (producer) {
+      return producer;
+    } else {
+      const newProducer = new Producer({
+        name: value["Producer"],
+        country: value["Country"],
+        region: value["Region"],
+      });
+
+      return await newProducer.save();
     }
   }
 }
