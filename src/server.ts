@@ -1,7 +1,15 @@
 import express, { Application, Request, Response } from "express";
 import { graphqlHTTP } from "express-graphql";
 import schema from "./graphql";
-import Database from "./data/mongoose";
+import { Database } from "./data/mongoose";
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Promise Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
 
 class Server {
   private app: Application;
@@ -10,8 +18,8 @@ class Server {
   constructor() {
     this.app = express();
     this._database = new Database();
+    this._database.connect();
     this.setupRoutes();
-    this.startServer();
   }
 
   private setupRoutes(): void {
@@ -30,7 +38,7 @@ class Server {
     });
   }
 
-  private startServer(): void {
+  public startServer(): void {
     const PORT = process.env.PORT || 3000;
     this.app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
@@ -39,3 +47,4 @@ class Server {
 }
 
 const server = new Server();
+server.startServer();

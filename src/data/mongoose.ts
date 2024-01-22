@@ -1,13 +1,11 @@
 import mongoose, { Connection } from "mongoose";
 
-class Database {
+export class Database {
   private connection!: Connection;
 
-  constructor() {
-    this.connect();
-  }
+  constructor() {}
 
-  private connect(): void {
+  public connect(): void {
     const mongoURI =
       process.env.MONGO_URI || "mongodb://mongo:27017/product-api";
 
@@ -28,5 +26,3 @@ class Database {
     return this.connection;
   }
 }
-
-export default Database;
