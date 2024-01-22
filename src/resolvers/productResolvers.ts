@@ -1,9 +1,10 @@
 import { GraphQLResolveInfo } from "graphql";
 import Product from "../models/Product";
 import Producer from "../models/Producer";
-import { parse } from "csv-parse";
 import { Transform } from "stream";
 import axios from "axios";
+const csv = require("csvtojson");
+var pipeline = require("stream/promises").pipeline;
 
 interface ProductArgs {
   _id?: string;
@@ -64,14 +65,34 @@ class ProductResolvers {
           throw error;
         });
 
-      const parseStream = stream.pipe(parse({ columns: true }));
-
       let batch: any = [];
       let tmp = new Map<string, any>();
+      let counter = 0;
+
+      const filterStream = new Transform({
+        objectMode: true,
+        async transform(product, encoding, callback) {
+          if (
+            !product["Product Name"] ||
+            !product["Vintage"] ||
+            !product["Producer"]
+          ) {
+            callback(null);
+            return;
+          } else {
+            callback(null, product);
+          }
+        },
+      });
 
       const transformStream = new Transform({
         objectMode: true,
         async transform(product, encoding, callback) {
+          if (counter % 1000 === 0) {
+            console.log(counter);
+          }
+          counter++;
+
           const filter = {
             vintage: product.Vintage,
             name: product["Product Name"],
@@ -103,28 +124,23 @@ class ProductResolvers {
                 },
               });
             }
-
             await ProductResolvers.bulkWriteProducts(batch);
             batch = [];
+            tmp = new Map<string, any>();
           }
 
-          callback();
+          callback(null);
         },
       });
 
-      parseStream.pipe(transformStream);
+      await pipeline(
+        stream,
+        csv({ delimiter: "," }, { objectMode: true }),
+        filterStream,
+        transformStream
+      );
 
-      transformStream.on("end", async () => {
-        if (batch.length > 0) {
-          await this.bulkWriteProducts(batch);
-        }
-
-        console.log("Product synchronization completed.");
-      });
-
-      transformStream.on("error", (error) => {
-        console.error("Stream error:", error);
-      });
+      console.log("Product synchronization completed.");
 
       return true;
     } catch (error) {
