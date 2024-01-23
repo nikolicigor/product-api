@@ -8,9 +8,9 @@ import { pipeline } from "stream/promises";
 
 type ProductArgs = {
   _id?: string;
-  vintage?: string;
-  name?: string;
-  producerId?: string;
+  vintage?: string | string[];
+  name?: string | string[];
+  producerId?: string | string[];
   ids?: string[];
 };
 
@@ -29,7 +29,7 @@ export default class ProductResolvers {
   }
 
   static async productsByProducer(_: any, args: RootQueryArgs): Promise<any[]> {
-    return Product.find({ producerId: args.producerId });
+    return Product.find({ producerId: args._id });
   }
 
   static async createProduct(_: any, args: ProductArgs): Promise<any> {
@@ -58,81 +58,75 @@ export default class ProductResolvers {
   ): Promise<boolean> {
     try {
       console.log("Mutation: synchronizeProducts");
-      process.nextTick(() => true);
+      process.nextTick(async () => {
+        const stream = await axios.get(LINK_TO_CSV, {
+          responseType: "stream",
+        });
 
-      const stream = await axios.get(LINK_TO_CSV, {
-        responseType: "stream",
-      });
-
-      const filterStream = new Transform({
-        objectMode: true,
-        async transform(product, _encoding, callback) {
-          if (
-            !product["Product Name"] ||
-            !product["Vintage"] ||
-            !product["Producer"]
-          ) {
-            callback(null);
-            return;
-          }
-
-          callback(null, product);
-        },
-      });
-
-      let productMap = new Map<string, any>();
-      const transformStream = new Transform({
-        objectMode: true,
-        async transform(product, _encoding, callback) {
-          const filter = {
-            vintage: product.Vintage,
-            name: product["Product Name"],
-          };
-
-          const key = `${product.Vintage}-${product["Product Name"]}-${product["Producer"]}`;
-
-          if (!productMap.has(key)) {
-            productMap.set(key, product);
-          }
-
-          const batch: any = [];
-          if (productMap.size >= 100) {
-            for (const [key, value] of productMap) {
-              const producer = await ProductResolvers.findOrCreateProducer(
-                value
-              );
-
-              const product = {
-                vintage: value.Vintage,
-                name: value["Product Name"],
-                producerId: producer.id,
-              };
-
-              batch.push({
-                updateOne: {
-                  filter: filter,
-                  update: product,
-                  upsert: true,
-                },
-              });
+        const filterStream = new Transform({
+          objectMode: true,
+          async transform(product, _encoding, callback) {
+            if (
+              !product["Product Name"] ||
+              !product["Vintage"] ||
+              !product["Producer"]
+            ) {
+              callback(null);
+              return;
             }
-            await ProductResolvers.bulkWriteProducts(batch);
-            productMap = new Map<string, any>();
-          }
 
-          callback(null);
-        },
+            callback(null, product);
+          },
+        });
+
+        let productMap = new Map<string, any>();
+        const transformStream = new Transform({
+          objectMode: true,
+          async transform(product, _encoding, callback) {
+            const key = `${product.Vintage}-${product["Product Name"]}-${product["Producer"]}`;
+
+            if (!productMap.has(key)) {
+              productMap.set(key, product);
+            }
+
+            const batch: any = [];
+            if (productMap.size >= 100) {
+              for (const [key, value] of productMap) {
+                const producer = await ProductResolvers.findOrCreateProducer(
+                  value
+                );
+
+                const product = {
+                  vintage: value.Vintage,
+                  name: value["Product Name"],
+                  producerId: producer.id,
+                };
+
+                batch.push({
+                  updateOne: {
+                    filter: product,
+                    update: product,
+                    upsert: true,
+                  },
+                });
+              }
+              await ProductResolvers.bulkWriteProducts(batch);
+              productMap = new Map<string, any>();
+            }
+
+            callback(null);
+          },
+        });
+
+        await pipeline(
+          stream.data,
+          csv({ delimiter: "," }, { objectMode: true }),
+          filterStream,
+          transformStream
+        );
+
+        console.log("Product synchronization completed.");
       });
-
-      await pipeline(
-        stream.data,
-        csv({ delimiter: "," }, { objectMode: true }),
-        filterStream,
-        transformStream
-      );
-
-      console.log("Product synchronization completed.");
-
       return true;
     } catch (error) {
       console.error(error);

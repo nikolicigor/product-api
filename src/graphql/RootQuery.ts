@@ -17,7 +17,7 @@ export const RootQuery = new GraphQLObjectType({
     },
     productsByProducer: {
       type: new GraphQLList(productType),
-      args: { producerId: { type: new GraphQLNonNull(GraphQLID) } },
+      args: { _id: { type: new GraphQLNonNull(GraphQLID) } },
       resolve: ProductResolvers.productsByProducer,
     },
   },

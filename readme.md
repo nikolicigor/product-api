@@ -16,17 +16,9 @@ This repository contains a simple Product API built with Node.js, Express, and M
 docker-compose up
 ```
 
-### Product synchronization mutation
+## Queries
 
-```bash
-curl --location 'http://localhost:3000/graphql' \
---header 'Content-Type: application/json' \
---data '{
-  "query": "mutation { syncProducts }"
-}'
-```
-
-### Fetch product
+### Fetch single product by ID
 
 ```bash
 curl --location 'http://localhost:3000/graphql' \
@@ -36,5 +28,60 @@ curl --location 'http://localhost:3000/graphql' \
   "variables": {
     "productId": "65ad52758879247538df63fd"
   }
+}'
+```
+
+### Fetch products by producer ID
+
+```bash
+curl --location 'http://localhost:3000/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query": "query ($producerId: ID!) { products(_id: $producerId) { name } }",
+  "variables": {
+    "producerId": "65ad52758879247538df63fd"
+  }
+}'
+```
+
+## Mutations
+
+### Create multiple products
+
+```bash
+curl --location 'http://localhost:3000/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query": "mutation { createProducts }"
+}'
+```
+
+### Update single product
+
+```bash
+curl --location 'http://localhost:3000/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "mutation { updateProduct }"
+}'
+```
+
+### Delete multiple products
+
+```bash
+curl --location 'http://localhost:3000/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query": "mutation { deleteProducts }"
+}'
+```
+
+### Product synchronization mutation
+
+```bash
+curl --location 'http://localhost:3000/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query": "mutation { syncProducts }"
 }'
 ```

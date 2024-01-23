@@ -12,4 +12,6 @@ const producerSchema = new Schema({
   region: { type: String },
 });
 
+producerSchema.index({ name: 1, country: 1, region: 1 }, { unique: true });
+
 export default mongoose.model<IProducer>("Producer", producerSchema);
