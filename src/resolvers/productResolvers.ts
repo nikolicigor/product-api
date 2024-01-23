@@ -3,8 +3,8 @@ import Product from "../models/Product";
 import Producer from "../models/Producer";
 import { Transform } from "stream";
 import axios from "axios";
-const csv = require("csvtojson");
-var pipeline = require("stream/promises").pipeline;
+import csv from "csvtojson";
+import { pipeline } from "stream/promises";
 
 interface ProductArgs {
   _id?: string;
@@ -41,8 +41,9 @@ class ProductResolvers {
     return Product.findByIdAndUpdate(args._id, args, { new: true });
   }
 
-  static deleteProducts(_: any, args: ProductArgs): Promise<boolean> {
-    return Product.deleteMany({ _id: { $in: args.ids } }).then(() => true);
+  static async deleteProducts(_: any, args: ProductArgs): Promise<boolean> {
+    await Product.deleteMany({ _id: { $in: args.ids } });
+    return true;
   }
 
   static async syncProducts(
@@ -66,7 +67,7 @@ class ProductResolvers {
         });
 
       let batch: any = [];
-      let tmp = new Map<string, any>();
+      let productMap = new Map<string, any>();
       let counter = 0;
 
       const filterStream = new Transform({
@@ -100,12 +101,12 @@ class ProductResolvers {
 
           const key = `${product.Vintage}-${product["Product Name"]}-${product["Producer"]}`;
 
-          if (!tmp.has(key)) {
-            tmp.set(key, product);
+          if (!productMap.has(key)) {
+            productMap.set(key, product);
           }
 
-          if (tmp.size >= 100) {
-            for (const [key, value] of tmp) {
+          if (productMap.size >= 100) {
+            for (const [key, value] of productMap) {
               const producer = await ProductResolvers.findOrCreateProducer(
                 value
               );
@@ -126,7 +127,7 @@ class ProductResolvers {
             }
             await ProductResolvers.bulkWriteProducts(batch);
             batch = [];
-            tmp = new Map<string, any>();
+            productMap = new Map<string, any>();
           }
 
           callback(null);
