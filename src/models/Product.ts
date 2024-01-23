@@ -1,11 +1,11 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { Producer } from "./Producer";
+import { IProducer } from "./Producer";
 
 export interface Product extends Document {
   vintage: string;
   name: string;
   producerId: mongoose.Types.ObjectId;
-  producer?: Producer;
+  producer?: IProducer;
 }
 
 const productSchema = new Schema({

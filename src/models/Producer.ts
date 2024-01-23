@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface Producer extends Document {
+export interface IProducer extends Document {
   name: string;
   country?: string;
   region?: string;
@@ -12,4 +12,4 @@ const producerSchema = new Schema({
   region: { type: String },
 });
 
-export default mongoose.model<Producer>("Producer", producerSchema);
+export default mongoose.model<IProducer>("Producer", producerSchema);

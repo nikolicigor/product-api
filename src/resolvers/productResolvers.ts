@@ -6,33 +6,33 @@ import axios from "axios";
 import csv from "csvtojson";
 import { pipeline } from "stream/promises";
 
-interface ProductArgs {
+type ProductArgs = {
   _id?: string;
   vintage?: string;
   name?: string;
   producerId?: string;
   ids?: string[];
-}
+};
 
-interface RootQueryArgs {
+type RootQueryArgs = {
   _id?: string;
   producerId?: string;
-}
+};
 
 const LINK_TO_CSV = process.env.LINK_TO_CSV
   ? process.env.LINK_TO_CSV
   : "https://api.frw.co.uk/feeds/all_listings.csv";
 
 export default class ProductResolvers {
-  static product(_: any, args: RootQueryArgs): Promise<any> {
+  static async product(_: any, args: RootQueryArgs): Promise<any> {
     return Product.findById(args._id);
   }
 
-  static productsByProducer(_: any, args: RootQueryArgs): Promise<any[]> {
+  static async productsByProducer(_: any, args: RootQueryArgs): Promise<any[]> {
     return Product.find({ producerId: args.producerId });
   }
 
-  static createProduct(_: any, args: ProductArgs): Promise<any> {
+  static async createProduct(_: any, args: ProductArgs): Promise<any> {
     const product = new Product({
       vintage: args.vintage,
       name: args.name,
@@ -41,7 +41,7 @@ export default class ProductResolvers {
     return product.save();
   }
 
-  static updateProduct(_: any, args: ProductArgs): Promise<any | null> {
+  static async updateProduct(_: any, args: ProductArgs): Promise<any | null> {
     return Product.findByIdAndUpdate(args._id, args, { new: true });
   }
 
@@ -63,8 +63,6 @@ export default class ProductResolvers {
       const stream = await axios.get(LINK_TO_CSV, {
         responseType: "stream",
       });
-      let batch: any = [];
-      let productMap = new Map<string, any>();
 
       const filterStream = new Transform({
         objectMode: true,
@@ -82,6 +80,7 @@ export default class ProductResolvers {
         },
       });
 
+      let productMap = new Map<string, any>();
       const transformStream = new Transform({
         objectMode: true,
         async transform(product, _encoding, callback) {
@@ -96,6 +95,7 @@ export default class ProductResolvers {
             productMap.set(key, product);
           }
 
+          const batch: any = [];
           if (productMap.size >= 100) {
             for (const [key, value] of productMap) {
               const producer = await ProductResolvers.findOrCreateProducer(
@@ -117,7 +117,6 @@ export default class ProductResolvers {
               });
             }
             await ProductResolvers.bulkWriteProducts(batch);
-            batch = [];
             productMap = new Map<string, any>();
           }
 
