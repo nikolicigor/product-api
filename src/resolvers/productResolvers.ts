@@ -41,6 +41,17 @@ export default class ProductResolvers {
     return product.save();
   }
 
+  static async createProducts(_: any, args: any): Promise<any[]> {
+    const products = args.products.map((product) => {
+      return {
+        vintage: product.vintage,
+        name: product.name,
+        producerId: product.producerId,
+      };
+    });
+    return Product.insertMany(products);
+  }
+
   static async updateProduct(_: any, args: ProductArgs): Promise<any | null> {
     return Product.findByIdAndUpdate(args._id, args, { new: true });
   }

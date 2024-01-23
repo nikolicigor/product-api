@@ -5,6 +5,7 @@ import {
   GraphQLID,
   GraphQLBoolean,
   GraphQLList,
+  GraphQLInputObjectType,
 } from "graphql";
 import ProductResolvers from "../resolvers/productResolvers";
 import { productType } from "../types/productTypes";
@@ -20,6 +21,24 @@ export const Mutation = new GraphQLObjectType({
         producerId: { type: new GraphQLNonNull(GraphQLID) },
       },
       resolve: ProductResolvers.createProduct,
+    },
+    createProducts: {
+      type: new GraphQLList(productType),
+      args: {
+        products: {
+          type: new GraphQLList(
+            new GraphQLInputObjectType({
+              name: "ProductInput",
+              fields: () => ({
+                vintage: { type: GraphQLString },
+                name: { type: GraphQLString },
+                producerId: { type: GraphQLID },
+              }),
+            })
+          ),
+        },
+      },
+      resolve: ProductResolvers.createProducts,
     },
     updateProduct: {
       type: productType,

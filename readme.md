@@ -24,9 +24,9 @@ docker-compose up
 curl --location 'http://localhost:3000/graphql' \
 --header 'Content-Type: application/json' \
 --data '{
-  "query": "query ($productId: ID!) { product(_id: $productId) { name } }",
+  "query": "query ($productId: ID!) { product(_id: $productId) { name producer { name } } }",
   "variables": {
-    "productId": "65ad52758879247538df63fd"
+    "productId": "65afc9c024f6c50be92fa3ea"
   }
 }'
 ```
@@ -37,9 +37,9 @@ curl --location 'http://localhost:3000/graphql' \
 curl --location 'http://localhost:3000/graphql' \
 --header 'Content-Type: application/json' \
 --data '{
-  "query": "query ($producerId: ID!) { products(_id: $producerId) { name } }",
+  "query": "query ($producerId: ID!) { productsByProducer(_id: $producerId) { name } }",
   "variables": {
-    "producerId": "65ad52758879247538df63fd"
+    "producerId": "65afc9bff2410942a6567ef5"
   }
 }'
 ```
@@ -52,7 +52,22 @@ curl --location 'http://localhost:3000/graphql' \
 curl --location 'http://localhost:3000/graphql' \
 --header 'Content-Type: application/json' \
 --data '{
-  "query": "mutation { createProducts }"
+    "query": "mutation ($products: [ProductInput]) { createProducts(products: $products) { name } }",
+    "variables": {
+        "products": [
+            {
+                "vintage": "2022",
+                "name": "Example Product",
+                "producerId": "65afc9bff2410942a6567ef5"
+            },
+            {
+                "vintage": "2021",
+                "name": "Another Product",
+                "producerId": "65afc9bff2410942a6567ef5"
+            }
+
+        ]
+    }
 }'
 ```
 
@@ -62,7 +77,13 @@ curl --location 'http://localhost:3000/graphql' \
 curl --location 'http://localhost:3000/graphql' \
 --header 'Content-Type: application/json' \
 --data '{
-    "query": "mutation { updateProduct }"
+    "query": "mutation ($productId: ID!, $vintage: String, $name: String, $producerId: ID) { updateProduct(_id: $productId, vintage: $vintage, name: $name, producerId: $producerId) { name } }",
+    "variables": {
+        "productId": "65afc9c024f6c50be92fa3ea",
+        "vintage": "2023",
+        "name": "Updated Product",
+        "producerId": "65afc9c024f6c50be92fa3ea"
+    }
 }'
 ```
 
@@ -72,7 +93,12 @@ curl --location 'http://localhost:3000/graphql' \
 curl --location 'http://localhost:3000/graphql' \
 --header 'Content-Type: application/json' \
 --data '{
-  "query": "mutation { deleteProducts }"
+    "query": "mutation ($productIds: [ID]) { deleteProducts(ids: $productIds) }",
+    "variables": {
+        "productIds": [
+            "65afc9c024f6c50be92fa3ea"
+        ]
+    }
 }'
 ```
 
