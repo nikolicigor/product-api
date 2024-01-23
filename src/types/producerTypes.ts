@@ -1,6 +1,6 @@
 import { GraphQLObjectType, GraphQLID, GraphQLString } from "graphql";
 
-const ProducerType = new GraphQLObjectType({
+export const producerType = new GraphQLObjectType({
   name: "Producer",
   fields: () => ({
     _id: { type: GraphQLID },
@@ -9,5 +9,3 @@ const ProducerType = new GraphQLObjectType({
     region: { type: GraphQLString },
   }),
 });
-
-export default ProducerType;

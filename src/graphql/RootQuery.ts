@@ -4,23 +4,21 @@ import {
   GraphQLID,
   GraphQLList,
 } from "graphql";
-import ProductType from "../types/productTypes";
 import ProductResolvers from "../resolvers/productResolvers";
+import { productType } from "../types/productTypes";
 
-const RootQuery = new GraphQLObjectType({
+export const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
     product: {
-      type: ProductType,
+      type: productType,
       args: { _id: { type: new GraphQLNonNull(GraphQLID) } },
       resolve: ProductResolvers.product,
     },
     productsByProducer: {
-      type: new GraphQLList(ProductType),
+      type: new GraphQLList(productType),
       args: { producerId: { type: new GraphQLNonNull(GraphQLID) } },
       resolve: ProductResolvers.productsByProducer,
     },
   },
 });
-
-export default RootQuery;

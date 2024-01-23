@@ -1,8 +1,8 @@
 import { GraphQLSchema } from "graphql";
-import Mutation from "./Mutations";
-import RootQuery from "./RootQuery";
+import { RootQuery } from "./RootQuery";
+import { Mutation } from "./Mutations";
 
-export default new GraphQLSchema({
+export const graphQLSchema = new GraphQLSchema({
   query: RootQuery,
   mutation: Mutation,
 });

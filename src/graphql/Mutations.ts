@@ -6,14 +6,14 @@ import {
   GraphQLBoolean,
   GraphQLList,
 } from "graphql";
-import ProductType from "../types/productTypes";
 import ProductResolvers from "../resolvers/productResolvers";
+import { productType } from "../types/productTypes";
 
-const Mutation = new GraphQLObjectType({
+export const Mutation = new GraphQLObjectType({
   name: "Mutation",
   fields: {
     createProduct: {
-      type: ProductType,
+      type: productType,
       args: {
         vintage: { type: new GraphQLNonNull(GraphQLString) },
         name: { type: new GraphQLNonNull(GraphQLString) },
@@ -22,7 +22,7 @@ const Mutation = new GraphQLObjectType({
       resolve: ProductResolvers.createProduct,
     },
     updateProduct: {
-      type: ProductType,
+      type: productType,
       args: {
         _id: { type: new GraphQLNonNull(GraphQLID) },
         vintage: { type: GraphQLString },
@@ -44,5 +44,3 @@ const Mutation = new GraphQLObjectType({
     },
   },
 });
-
-export default Mutation;

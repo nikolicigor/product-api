@@ -1,8 +1,8 @@
 import { GraphQLObjectType, GraphQLString, GraphQLID } from "graphql";
-import ProducerType from "./producerTypes";
 import Producer from "../models/Producer";
+import { producerType } from "./producerTypes";
 
-const ProductType = new GraphQLObjectType({
+export const productType = new GraphQLObjectType({
   name: "Product",
   fields: () => ({
     _id: { type: GraphQLID },
@@ -10,12 +10,10 @@ const ProductType = new GraphQLObjectType({
     name: { type: GraphQLString },
     producerId: { type: GraphQLID },
     producer: {
-      type: ProducerType,
+      type: producerType,
       resolve(parent) {
         return Producer.findById(parent.producerId);
       },
     },
   }),
 });
-
-export default ProductType;

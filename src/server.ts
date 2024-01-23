@@ -1,9 +1,9 @@
 import express, { Application, Request, Response } from "express";
 import { graphqlHTTP } from "express-graphql";
-import schema from "./graphql";
 import { Database } from "./data/mongoose";
+import { graphQLSchema } from "./graphql";
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", (reason, _promise) => {
   console.error("Unhandled Promise Rejection:", reason);
 });
 
@@ -27,14 +27,18 @@ class Server {
     this.app.use(
       "/graphql",
       graphqlHTTP({
-        schema: schema,
+        schema: graphQLSchema,
         graphiql: true,
       })
     );
 
     // Health endpoint
     this.app.get("/health", (_req: Request, res: Response) => {
-      res.send("OK");
+      const conn = this._database.getConnection();
+      if (conn.readyState === 1) {
+        return res.send("OK");
+      }
+      res.status(500).send("NOT OK");
     });
   }
 

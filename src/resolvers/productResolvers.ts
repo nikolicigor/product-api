@@ -19,7 +19,11 @@ interface RootQueryArgs {
   producerId?: string;
 }
 
-class ProductResolvers {
+const LINK_TO_CSV = process.env.LINK_TO_CSV
+  ? process.env.LINK_TO_CSV
+  : "https://api.frw.co.uk/feeds/all_listings.csv";
+
+export default class ProductResolvers {
   static product(_: any, args: RootQueryArgs): Promise<any> {
     return Product.findById(args._id);
   }
@@ -56,23 +60,15 @@ class ProductResolvers {
       console.log("Mutation: synchronizeProducts");
       process.nextTick(() => true);
 
-      const stream = await axios
-        .get("https://api.frw.co.uk/feeds/all_listings.csv", {
-          responseType: "stream",
-        })
-        .then((response) => response.data)
-        .catch((error) => {
-          console.error("HTTP request error:", error);
-          throw error;
-        });
-
+      const stream = await axios.get(LINK_TO_CSV, {
+        responseType: "stream",
+      });
       let batch: any = [];
       let productMap = new Map<string, any>();
-      let counter = 0;
 
       const filterStream = new Transform({
         objectMode: true,
-        async transform(product, encoding, callback) {
+        async transform(product, _encoding, callback) {
           if (
             !product["Product Name"] ||
             !product["Vintage"] ||
@@ -80,20 +76,15 @@ class ProductResolvers {
           ) {
             callback(null);
             return;
-          } else {
-            callback(null, product);
           }
+
+          callback(null, product);
         },
       });
 
       const transformStream = new Transform({
         objectMode: true,
-        async transform(product, encoding, callback) {
-          if (counter % 1000 === 0) {
-            console.log(counter);
-          }
-          counter++;
-
+        async transform(product, _encoding, callback) {
           const filter = {
             vintage: product.Vintage,
             name: product["Product Name"],
@@ -135,7 +126,7 @@ class ProductResolvers {
       });
 
       await pipeline(
-        stream,
+        stream.data,
         csv({ delimiter: "," }, { objectMode: true }),
         filterStream,
         transformStream
@@ -175,5 +166,3 @@ class ProductResolvers {
     }
   }
 }
-
-export default ProductResolvers;
