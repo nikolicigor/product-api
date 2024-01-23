@@ -38,7 +38,7 @@ class Server {
       if (conn.readyState === 1) {
         return res.send("OK");
       }
-      res.status(500).send("NOT OK");
+      res.status(503).send("NOT OK");
     });
   }
 
